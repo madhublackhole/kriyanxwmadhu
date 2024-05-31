@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Table</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f7f7f7;
+        margin: 0;
+        padding: 0;
+    }
+
+    .container {
+        max-width: 800px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .input-container {
+        margin-bottom: 20px;
+    }
+
+    .input-container label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+
+    .input-container textarea {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        box-sizing: border-box;
+        font-size: 14px;
+    }
+    
+    .input-container input {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        box-sizing: border-box;
+        font-size: 14px;
+    }
+
+    .input-container select {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        box-sizing: border-box;
+        font-size: 14px;
+    }
+
+    button {
+        display: block;
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 10px;
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        font-size: 14px;
+    }
+
+    button:hover {
+        background-color: #0056b3;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+
+    th, td {
+        padding: 10px;
+        border: 1px solid #ddd;
+        text-align: left;
+    }
+
+    th {
+        background-color: #f2f2f2;
+    }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Data Table</h1>
+
+    <div class="input-container">
+        <label for="fileName">File Name:</label>
+        <input type="text" id="fileName" placeholder="Enter file name">
+    </div>
+
+    <div class="input-container">
+        <label for="dataInputTitle">Title:</label>
+        <textarea id="dataInputTitle" placeholder="Paste title" rows="5"></textarea>
+    </div>
+
+    <div class="input-container">
+        <label for="dataInputAttr">Attribute:</label>
+        <textarea id="dataInputAttr" placeholder="Paste Attribute" rows="5"></textarea>
+    </div>
+
+    <button onclick="addData()">Add Data</button>
+    <button onclick="saveToCSV()">Save to CSV</button>
+
+    <div class="input-container">
+        <label for="filter">Filter by Cluster:</label>
+        <select id="filter" onchange="filterData()">
+            <option value="all">All</option>
+        </select>
+    </div>
+
+    <table id="dataTable">
+        <thead>
+            <tr>
+                <th>S.No</th>
+                <th>Title</th>
+                <th>Attribute</th>
+                <th>Cluster</th>
+            </tr>
+        </thead>
+        <tbody id="dataBody">
+            <!-- Table body content will be generated dynamically -->
+        </tbody>
+    </table>
+</div>
+
+<script>
+    var orderMap = {};
+    var order = 1;
+
+    // Function to populate the table with data and ranks
+    function populateTable(titles, attributes) {
+        var tableBody = document.getElementById("dataBody");
+        tableBody.innerHTML = "";
+        orderMap = {};
+        order = 1;
+
+        // Count occurrences of each value in attributes
+        var attributeOccurrences = {};
+        attributes.forEach(function(attr) {
+            attributeOccurrences[attr] = (attributeOccurrences[attr] || 0) + 1;
+        });
+
+        // Populate the table with data and marks
+        attributes.forEach(function(attr, index) {
+            var row = document.createElement("tr");
+            var serialNumberCell = document.createElement("td");
+            var titleCell = document.createElement("td");
+            var attributeCell = document.createElement("td");
+            var markCell = document.createElement("td");
+
+            serialNumberCell.textContent = index + 1;
+            titleCell.textContent = titles[index] || ""; // If no title is provided, display an empty string
+            attributeCell.textContent = attr;
+
+            // If attribute has duplicates, mark with cluster number
+            if (attributeOccurrences[attr] > 1) {
+                if (!orderMap[attr]) {
+                    orderMap[attr] = order++;
+                }
+                markCell.textContent = orderMap[attr];
+            } else {
+                markCell.textContent = "Not dup";
+            }
+
+            row.appendChild(serialNumberCell);
+            row.appendChild(titleCell);
+            row.appendChild(attributeCell);
+            row.appendChild(markCell);
+
+            tableBody.appendChild(row);
+        });
+
+        // Populate filter dropdown
+        var filterSelect = document.getElementById("filter");
+        filterSelect.innerHTML = "<option value='all'>All</option>";
+        filterSelect.innerHTML += "<option value='Not dup'>Not dup</option>";
+        for (var key in orderMap) {
+            filterSelect.innerHTML += "<option value='" + orderMap[key] + "'>" + orderMap[key] + "</option>";
+        }
+    }
+
+    // Function to add data to the table
+    function addData() {
+        var dataInputTitle = document.getElementById("dataInputTitle");
+        var titles = dataInputTitle.value.trim().split('\n');
+
+        var dataInputAttr = document.getElementById("dataInputAttr");
+        var attributes = dataInputAttr.value.trim().split('\n');
+
+        // Check if at least one of the textareas has content
+        if ((titles.length > 0 && titles[0].trim() !== "") || (attributes.length > 0 && attributes[0].trim() !== "")) {
+            populateTable(titles, attributes);
+        } else {
+            alert("Please enter data in at least one of the textareas.");
+        }
+    }
+
+    // Function to filter data by order
+    function filterData() {
+        var filterValue = document.getElementById("filter").value;
+        var rows = document.getElementById("dataTable").getElementsByTagName("tr");
+        for (var i = 1; i < rows.length; i++) { // start from 1 to skip header row
+            var cells = rows[i].getElementsByTagName("td");
+            var orderCell = cells[3];
+            if (filterValue === "all" || orderCell.textContent === filterValue) {
+                rows[i].style.display = "";
+            } else {
+                rows[i].style.display = "none";
+            }
+        }
+    }
+
+    // Function to save data to CSV
+    function saveToCSV() {
+        var fileName = document.getElementById("fileName").value.trim();
+        if (fileName === "") {
+            alert("Please enter a file name.");
+            return;
+        }
+
+        var table = document.getElementById("dataTable");
+        var rows = table.rows;
+
+        var csvContent = "data:text/csv;charset=utf-8,";
+        for (var i = 0; i < rows.length; i++) {
+            var cells = rows[i].cells;
+            var rowValues = [];
+            for (var j = 0; j < cells.length; j++) {
+                rowValues.push(cells[j].textContent);
+            }
+            csvContent += rowValues.join(",") + "\n";
+        }
+
+        var encodedUri = encodeURI(csvContent);
+        var link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", fileName + ".csv");
+        document.body.appendChild(link); // Required for Firefox
+        link.click();
+    }
+</script>
+
+</body>
+</html>
